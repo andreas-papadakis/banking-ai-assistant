@@ -1,0 +1,8 @@
+# Sibling repositories (separate git repos, not tracked here)
+banking-backoffice/
+banking-core-library/
+
+# Local configuration and secrets - never commit
+config.local.yaml
+.env
+*.token
