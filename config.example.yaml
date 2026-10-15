@@ -10,6 +10,9 @@ project_number: 1
 # Repos whose names start with this prefix are part of the project.
 repo_prefix: your-prefix-
 
+# Who every created ticket is assigned to: a GitHub username or "@me" (the token's owner).
+assignee: your-github-username
+
 # Optional: a file that exports GH_TOKEN, sourced before each gh call
 # (useful because non-interactive shells do not load ~/.zshrc). Remove if GH_TOKEN is already set.
 token_env_file: ~/.gh_token_env

@@ -12,6 +12,8 @@ The **`create-ticket` skill** turns a request into a GitHub issue and puts it on
 - Status, Priority and labels set on the board
 - duplicate and stale-branch checks before creating anything
 
+The judgment (what the ticket says, where it goes, how important it is) is the model's job. The mechanical steps (next number, create, board, fields, verification) are done by a plain script, [`create-ticket.sh`](.claude/skills/create-ticket/create-ticket.sh), so they are deterministic and cost no tokens.
+
 The full procedure lives in [`.claude/skills/create-ticket/SKILL.md`](.claude/skills/create-ticket/SKILL.md), which is the single source of truth. This README only gives the overview.
 
 ## 📁 Layout
@@ -26,9 +28,11 @@ banking/               <- this repository; start Claude Code here
 
 Every repo whose name starts with the configured prefix (`banking-`) counts as part of the project.
 
+Skills are only discovered when Claude Code is started from this folder. A session started inside one of the repos does not see `create-ticket`, although it still loads this folder's `CLAUDE.md`.
+
 ## 🚀 Quick start
 
-1. Install the [GitHub CLI](https://cli.github.com/) (`gh`).
+1. Install the [GitHub CLI](https://cli.github.com/) (`gh`) and [`jq`](https://jqlang.org/).
 2. Create a **classic** personal access token with the `repo` and `project` scopes. Fine-grained tokens cannot reach user-level GitHub Projects.
 3. Keep the token out of this repository. For example, put `export GH_TOKEN=...` in a file such as `~/.gh_token_env` (permissions `600`) and point `token_env_file` at it in the config.
 4. Copy `config.example.yaml` to `config.local.yaml` (git-ignored) and fill in your own values.
@@ -45,13 +49,14 @@ Personal values live in `config.local.yaml`; only the placeholder file `config.e
 | `owner` | GitHub user or organization that owns the repos and the project |
 | `project_number` | Number of the GitHub Project (the number in `.../projects/<number>`) |
 | `repo_prefix` | Repos whose names start with this prefix are part of the project |
+| `assignee` | Who every created ticket is assigned to (a username or `@me`) |
 | `token_env_file` | Optional file that exports `GH_TOKEN`, sourced before each `gh` call |
 | `labels` | Standard labels (name, color, description), kept identical in every repo |
 
 ## 📐 Conventions
 
 - **Title:** `<n> - <imperative title>`, where `<n>` is the project-wide counter.
-- **Body:** 🎯 Context, 🛠️ What to do, ✅ Acceptance criteria. Features and bugs use Given/When/Then scenarios; chores use a checklist. Open questions go in a warning box at the top as checkboxes.
+- **Body:** 🎯 Context, 🛠️ What to do, ✅ Acceptance criteria. Features and bugs use Given/When/Then scenarios; chores use a checklist. Open questions go in a warning box at the top as checkboxes. Every ticket ends with a footer naming Claude Code and the model that wrote it.
 - **Branches:** `<label>/<n>`, for example `techdebt/7`.
 - **Status:** `Backlog` while questions are open, `Ready` when nothing is. Priority runs from P0 (pick up now) to P2 (least important). Size is left empty and Estimate is asked for.
 - **Labels:**
