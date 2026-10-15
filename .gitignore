@@ -1,8 +1,13 @@
 # Sibling repositories (separate git repos, not tracked here)
-banking-backoffice/
-banking-core-library/
+banking-*/
 
 # Local configuration and secrets - never commit
 config.local.yaml
 .env
 *.token
+
+# Personal Claude Code permissions
+.claude/settings.local.json
+
+# macOS
+.DS_Store
