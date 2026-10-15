@@ -1,0 +1,28 @@
+# Copy to config.local.yaml (git-ignored) and fill in your own values.
+# Never put tokens in this file; expose them through the GH_TOKEN environment variable.
+
+# GitHub user or organization that owns the repos and the project.
+owner: your-github-username
+
+# Number of the GitHub Project (the number in .../projects/<number>).
+project_number: 1
+
+# Repos whose names start with this prefix are part of the project.
+repo_prefix: your-prefix-
+
+# Optional: a file that exports GH_TOKEN, sourced before each gh call
+# (useful because non-interactive shells do not load ~/.zshrc). Remove if GH_TOKEN is already set.
+token_env_file: ~/.gh_token_env
+
+# Standard labels, kept identical (name, color, description) in every repo with the prefix above.
+# color is a hex value without the leading #.
+labels:
+  - name: feature
+    color: a2eeef
+    description: New feature or request
+  - name: techdebt
+    color: da4f0a
+    description: Code maintenance
+  - name: spike
+    color: f5d84d
+    description: Needs investigation
