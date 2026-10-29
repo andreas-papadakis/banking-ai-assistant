@@ -5,8 +5,12 @@
 # duplicates, priority, text, how answers fold into the description) is the skill's job (see SKILL.md).
 #
 # Reads owner, project_number, repo_prefix, assignee and token_env_file from config.local.yaml
-# in the workspace root (override the path with CREATE_TICKET_CONFIG).
+# in the workspace root (override the path with TICKET_CONFIG). The shared helpers (die, cfg,
+# config and token loading) come from .claude/scripts/lib.sh.
 set -euo pipefail
+
+# shellcheck source=../../scripts/lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../scripts" && pwd)/lib.sh"
 
 usage() {
   cat <<'EOF'
@@ -42,8 +46,6 @@ Common:
   --dry-run    validate everything and print what would happen, without writing anything
 EOF
 }
-
-die() { echo "error: $*" >&2; exit 1; }
 
 REPO="" TITLE="" BODY_FILE="" MODEL="" STATUS="" PRIORITY="" ESTIMATE="" PARENT="" UPDATE="" READY=0 DRY_RUN=0
 LABELS=()
@@ -85,31 +87,15 @@ else
 fi
 
 # ---- config -----------------------------------------------------------------------------
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-CONFIG="${CREATE_TICKET_CONFIG:-$ROOT/config.local.yaml}"
-[[ -f $CONFIG ]] || die "config not found: $CONFIG (copy config.example.yaml to config.local.yaml)"
-
-# Top-level "key: value" lines only; strips surrounding quotes.
-cfg() {
-  awk -v k="$1" '
-    index($0, k ":") == 1 {
-      v = substr($0, length(k) + 2); sub(/^ +/, "", v); sub(/ +#.*$/, "", v)
-      gsub(/^"|"$/, "", v); print v; exit
-    }' "$CONFIG"
-}
+load_config
 
 OWNER="$(cfg owner)"; PROJECT_NUMBER="$(cfg project_number)"; PREFIX="$(cfg repo_prefix)"
-ASSIGNEE="$(cfg assignee)"; TOKEN_FILE="$(cfg token_env_file)"
+ASSIGNEE="$(cfg assignee)"
 [[ -n $OWNER && -n $PROJECT_NUMBER && -n $PREFIX && -n $ASSIGNEE ]] \
   || die "config must set owner, project_number, repo_prefix and assignee"
 [[ $PROJECT_NUMBER =~ ^[0-9]+$ ]] || die "project_number must be a number"
 
-if [[ -n $TOKEN_FILE ]]; then
-  TOKEN_FILE="${TOKEN_FILE/#\~/$HOME}"
-  [[ -f $TOKEN_FILE ]] || die "token_env_file not found: $TOKEN_FILE"
-  # shellcheck disable=SC1090
-  source "$TOKEN_FILE"
-fi
+source_token_file
 
 command -v gh >/dev/null || die "gh (GitHub CLI) is not installed"
 command -v jq >/dev/null || die "jq is not installed"
