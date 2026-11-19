@@ -10,9 +10,11 @@ The **`create-ticket` skill** turns a request into a GitHub issue and puts it on
 - a project-wide ticket number in the title (`7 - Do the thing`), independent of per-repo issue numbers
 - parent and sub-issues when work spans several repos
 - Status, Priority and labels set on the board
-- duplicate and stale-branch checks before creating anything
+- duplicate checks before creating anything
 
 The judgment (what the ticket says, where it goes, how important it is) is the model's job. The mechanical steps (next number, create, board, fields, verification) are done by a plain script, [`create-ticket.sh`](.claude/skills/create-ticket/create-ticket.sh), so they are deterministic and cost no tokens.
+
+Looking tickets up is shared by all ticket skills: [`find-ticket.sh`](.claude/scripts/find-ticket.sh) finds a ticket by its number (`--id 12`) or by keywords (`--search "board status"`) in every repo with the prefix, open and closed, and prints one line per hit with the issue URL, title, state and board Status. `create-ticket` uses it for its duplicate check. Helpers shared by the scripts live in [`.claude/scripts/lib.sh`](.claude/scripts/lib.sh).
 
 The full procedure lives in [`.claude/skills/create-ticket/SKILL.md`](.claude/skills/create-ticket/SKILL.md), which is the single source of truth. This README only gives the overview.
 
@@ -42,7 +44,7 @@ Optional: to stop `gh` commands from prompting each time, add an allowlist to `.
 
 ## ⚙️ Configuration
 
-Personal values live in `config.local.yaml`; only the placeholder file `config.example.yaml` is committed.
+Personal values live in `config.local.yaml`; only the placeholder file `config.example.yaml` is committed. To use a different config file, set the `TICKET_CONFIG` environment variable to its path.
 
 | Key | Meaning |
 |---|---|

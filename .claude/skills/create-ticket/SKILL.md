@@ -5,15 +5,15 @@ description: Create GitHub issues (features, bugs, chores, docs) for the banking
 
 # create-ticket
 
-Creates tickets as GitHub issues, adds them to the GitHub Project and sets board fields. The judgment (what the ticket says, where it goes, how important it is) is yours; the mechanical part is done by `create-ticket.sh` next to this file.
+Creates tickets as GitHub issues, adds them to the GitHub Project and sets board fields. The judgment (what the ticket says, where it goes, how important it is) is yours; the mechanical part is done by `create-ticket.sh` next to this file and by `find-ticket.sh` in `.claude/scripts/` (shared by all ticket skills, together with their helpers in `.claude/scripts/lib.sh`).
 
-All user-specific values come from `config.local.yaml` in the workspace root (the folder containing the sibling repos). If it is missing, stop and tell the user to copy `config.example.yaml` to `config.local.yaml` and fill it in.
+All user-specific values come from `config.local.yaml` in the workspace root (the folder containing the sibling repos). If it is missing, stop and tell the user to copy `config.example.yaml` to `config.local.yaml` and fill it in. To use a different config file, set `TICKET_CONFIG` to its path; both scripts honour it.
 
 Config keys: `owner`, `project_number`, `repo_prefix`, `assignee`, `token_env_file` (optional), `labels`.
 
-## Running `gh` and the script
+## Running `gh` and the scripts
 
-The script reads the config, sources `token_env_file` itself and calls `gh`. For any other `gh` call, the shell is non-interactive, so shell profiles are not loaded: if `token_env_file` is set, run `source <token_env_file>` at the start of that Bash call. Never print, echo or inspect the token.
+Both scripts (`create-ticket.sh` and `.claude/scripts/find-ticket.sh`) read the config, source `token_env_file` themselves and call `gh`. For any other `gh` call, the shell is non-interactive, so shell profiles are not loaded: if `token_env_file` is set, run `source <token_env_file>` at the start of that Bash call. Never print, echo or inspect the token.
 
 The `gh project ...` subcommands need extra token scopes. Use `gh issue ...` for issues and `gh api graphql` for project operations (the script already does).
 
@@ -30,7 +30,15 @@ Never put secrets or internal-only details in a ticket. Some repos are public (c
 
 1. **Understand the request.** Decide the type: feature, bug, or chore/tech-debt/docs. Read the relevant code in the sibling repos (all cloned next to each other in the workspace root); use `gh` for a repo that is not cloned.
 2. **Choose the repo and parent.** The ticket goes in the repo where the problem is noticed or the feature is requested. That ticket is the **parent**. Root-cause work found in another repo, and dependency bumps in consuming apps, become **sub-issues** of it. When the root cause is discovered later, create the sub-issue then and link it. A bug found directly in a library has its parent in the library.
-3. **Check for duplicates** before creating (search open and recent tickets in every `repo_prefix` repo, e.g. `gh issue list --search`). Titles are `<n> - <Title>` where `n` is a project-wide counter, independent of per-repo issue numbers; the script computes it (highest leading number in any `repo_prefix` repo, all states, plus 1). Pull requests do not count. Each sub-issue gets its own number.
+3. **Check for duplicates** before creating. Run the shared lookup script with a few distinctive keywords from the request (repeat with other keywords if the first search is inconclusive):
+
+   ```
+   bash .claude/scripts/find-ticket.sh --search "<keywords>"
+   ```
+
+   It searches titles and bodies of the issues in every `repo_prefix` repo, open and closed, and prints one line per hit: `<issue url> | <title> | <state> | <board Status>`. Exit code 2 means nothing matched, which is the expected result here, not a failure; exit code 1 is an error. `--id <n>` finds a ticket by its number instead. If a hit covers the same work, tell the user instead of creating a ticket. Never edit, reopen or close the existing ticket without being asked.
+
+   Titles are `<n> - <Title>` where `n` is a project-wide counter, independent of per-repo issue numbers; the script computes it (highest leading number in any `repo_prefix` repo, all states, plus 1). Pull requests do not count. Each sub-issue gets its own number.
 4. **Write the title.** Imperative, short, no emoji, and **without the number**: the script prepends `<n> - `.
 5. **Write the body** (English) to a file in the scratchpad directory:
 
